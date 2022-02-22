@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/ipfs@0.61.1-rc.2/index.min.js"></script>
+    <script src="https://unpkg.com/orbit-db@0.28.1-e91e92c.0/dist/orbitdb.min.js"></script>
+    <script src="https://unpkg.com/multiaddr/dist/index.min.js"></script>
+    <script src= "store.js"></script>
+    <script src="./Models/UsersModel.js"></script>
+    <script src="./Models/FeedModel.js"></script>
+    <title>Document</title>
+</head>
+<body>
+    <h1>All Users</h1>
+    <div id = "AllUsers">
+
+    </div>
+    <h1>All Feeds</h1>
+    <div id = "AllFeeds">
+    </div>
+    <script>
+        const InitalizeUsers = async (db, identity) => {
+            const User = Users(db);
+            window.UserDB = db
+            await User.register(identity.id) 
+            const showAllUsers = async () => {
+                const UsersContainer = document.getElementById("AllUsers")
+                const AllUsers = await User.allUsers()
+                while (UsersContainer.firstChild) {
+                    UsersContainer.removeChild(UsersContainer.lastChild);
+                }
+                for(user in AllUsers) {
+                    let Label = document.createElement("p")
+                    Label.innerText = "User ID: " + user
+                    UsersContainer.appendChild(Label)
+                }
+            }
+            db.events.on("replicated", showAllUsers)
+            showAllUsers()
+        }
+        const InitalizeFeed = async (db,identity) => {
+            const Feed = Feeds(db);
+            window.FeedDB = db
+            await Feed.addFeed(identity.id, "New Feed By: " + identity.id,"Dynnn") 
+            const showAllFeeds = async () => {
+                const FeedsContainer = document.getElementById("AllFeeds")
+                const AllFeeds = await Feed.getAllFeeds()
+                while (FeedsContainer.firstChild) {
+                    FeedsContainer.removeChild(FeedsContainer.lastChild);
+                }
+                for(feed in AllFeeds) {
+                    let Label = document.createElement("h3")
+                    let Content = document.createElement("p")
+                    Label.innerText = AllFeeds[feed].title
+                    Content.innerText = AllFeeds[feed].content
+                    FeedsContainer.appendChild(Label)
+                FeedsContainer.appendChild(Content)
+                }
+            }
+            db.events.on("replicated", showAllFeeds)
+            showAllFeeds()
+        }
+
+        Store(window.Ipfs, window.OrbitDB).then(async openDatabase => {
+            const UserDB = await openDatabase("users", "keyvalue")
+            const TwitterDB = await openDatabase("twitterFeeds", "keyvalue")
+            const identity = await Node.id()
+            InitalizeUsers(UserDB,identity)
+            InitalizeFeed(TwitterDB, identity)
+            
+        }).catch(e => {
+            throw e
+        });
+    
+        
+    </script>
+</body>
+</html>
